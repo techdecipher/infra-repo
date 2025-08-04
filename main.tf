@@ -27,7 +27,13 @@ resource "aws_iam_role" "eks_cluster_role" {
       }
     }]
   })
+
+  lifecycle {
+    create_before_destroy = true
+    ignore_changes        = all
+  }
 }
+
 
 resource "aws_iam_role_policy_attachment" "eks_cluster_AmazonEKSClusterPolicy" {
   role       = aws_iam_role.eks_cluster_role.name
@@ -53,7 +59,8 @@ resource "aws_ecr_repository" "flask_app" {
 
   lifecycle {
     prevent_destroy = true
-    ignore_changes  = [image_scanning_configuration, image_tag_mutability]
+    ignore_changes  = all
+    create_before_destroy = true
   }
 }
 
