@@ -64,3 +64,30 @@ resource "aws_ecr_repository" "flask_app" {
   }
 }
 
+resource "kubernetes_config_map" "aws_auth" {
+  depends_on = [aws_eks_cluster.eks]  # Ensure EKS is ready first
+
+  metadata {
+    name      = "aws-auth"
+    namespace = "kube-system"
+  }
+
+  data = {
+    mapRoles = yamlencode([
+      {
+        rolearn  = aws_iam_role.eks_cluster_role.arn
+        username = "system:node:{{EC2PrivateDNSName}}"
+        groups   = ["system:bootstrappers", "system:nodes"]
+      }
+    ])
+    mapUsers = yamlencode([
+      {
+        userarn  = "arn:aws:iam::405325454731:user/pranav"  
+        username = "pranav"
+        groups   = ["system:masters"]
+      }
+    ])
+  }
+}
+
+
