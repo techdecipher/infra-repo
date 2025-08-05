@@ -28,18 +28,18 @@ jobs:
 
       - name: Terraform Plan
         if: github.ref == 'refs/heads/staging'
-        run: terraform plan \
-          -var="aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" \
-          -var="aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
-          -var="key_name=${{ secrets.KEY_NAME }}" \
-          -var="private_key_path=key"
-          
+        run: |
+          terraform plan \
+            -var="aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" \
+            -var="aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+            -var="key_name=${{ secrets.KEY_NAME }}" \
+            -var="private_key_path=key"
+
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main'
-        run: terraform apply -auto-approve \
-          -var="aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" \
-          -var="aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
-          -var="key_name=${{ secrets.KEY_NAME }}" \
-          -var="private_key_path=key"
-          
-          
+        run: |
+          terraform apply -auto-approve \
+            -var="aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" \
+            -var="aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+            -var="key_name=${{ secrets.KEY_NAME }}" \
+            -var="private_key_path=key"
