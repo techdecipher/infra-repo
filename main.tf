@@ -1,90 +1,56 @@
-resource "aws_vpc" "main" {
-  cidr_block = "10.0.0.0/16"
+resource "aws_key_pair" "deployer" {
+  key_name   = var.key_name
+  public_key = file("${var.private_key_path}.pub")
 }
 
-resource "aws_subnet" "subnet1" {
-  vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.1.0/24"
-  availability_zone = "${var.region}a"
-}
-
-resource "aws_subnet" "subnet2" {
-  vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.2.0/24"
-  availability_zone = "${var.region}b"
-}
-
-resource "aws_iam_role" "eks_cluster_role" {
-  name = "eksClusterRole"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [{
-      Action = "sts:AssumeRole",
-      Effect = "Allow",
-      Principal = {
-        Service = "eks.amazonaws.com"
-      }
-    }]
-  })
-
-  lifecycle {
-    create_before_destroy = true
-    ignore_changes        = all
+resource "aws_security_group" "web_sg" {
+  name_prefix = "web-sg"
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }
 
-resource "aws_iam_role_policy_attachment" "eks_cluster_AmazonEKSClusterPolicy" {
-  role       = aws_iam_role.eks_cluster_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-}
+resource "aws_instance" "flask_server" {
+  ami           = "ami-0fc5d935ebf8bc3bc" # Ubuntu 22.04
+  instance_type = "t2.small"
+  key_name      = var.key_name
+  security_groups = [aws_security_group.web_sg.name]
 
-resource "aws_eks_cluster" "eks" {
-  name     = var.cluster_name
-  role_arn = aws_iam_role.eks_cluster_role.arn
+  tags = {
+    Name = "flask-server"
+  }
 
-  vpc_config {
-    subnet_ids = [
-      aws_subnet.subnet1.id,
-      aws_subnet.subnet2.id
+  provisioner "remote-exec" {
+    inline = [
+      "sudo apt update",
+      "sudo apt install -y docker.io",
+      "sudo systemctl start docker",
+      "sudo usermod -aG docker ubuntu"
     ]
+    connection {
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = file("key.pem")
+      host        = self.public_ip
+    }
   }
-
-  depends_on = [aws_iam_role_policy_attachment.eks_cluster_AmazonEKSClusterPolicy]
 }
 
-resource "aws_ecr_repository" "flask_app" {
+resource "aws_ecr_repository" "flask_repo" {
   name = "flask-app"
-
-  lifecycle {
-    prevent_destroy       = true
-    ignore_changes        = all
-    create_before_destroy = true
-  }
-}
-
-resource "kubernetes_config_map" "aws_auth" {
-  depends_on = [aws_eks_cluster.eks]
-
-  metadata {
-    name      = "aws-auth"
-    namespace = "kube-system"
-  }
-
-  data = {
-    mapRoles = yamlencode([
-      {
-        rolearn  = aws_iam_role.eks_cluster_role.arn
-        username = "system:node:{{EC2PrivateDNSName}}"
-        groups   = ["system:bootstrappers", "system:nodes"]
-      }
-    ])
-    mapUsers = yamlencode([
-      {
-        userarn  = "arn:aws:iam::405325454731:user/pranav"
-        username = "pranav"
-        groups   = ["system:masters"]
-      }
-    ])
-  }
 }
