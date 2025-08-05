@@ -38,9 +38,12 @@ resource "aws_instance" "flask_server" {
   provisioner "remote-exec" {
     inline = [
       "sudo apt update",
-      "sudo apt install -y docker.io",
+      "sudo apt install -y docker.io unzip",
       "sudo systemctl start docker",
-      "sudo usermod -aG docker ubuntu"
+      "sudo usermod -aG docker ubuntu",
+      "curl 'https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip' -o 'awscliv2.zip'",
+      "unzip awscliv2.zip",
+      "sudo ./aws/install"
     ]
     connection {
       type        = "ssh"
