@@ -1,4 +1,3 @@
-# EXISTING: VPC + Subnets + IAM + EKS + ECR
 resource "aws_vpc" "main" {
   cidr_block = "10.0.0.0/16"
 }
@@ -58,30 +57,12 @@ resource "aws_ecr_repository" "flask_app" {
   name = "flask-app"
 
   lifecycle {
-    prevent_destroy = true
-    ignore_changes  = all
+    prevent_destroy       = true
+    ignore_changes        = all
     create_before_destroy = true
   }
 }
 
-# 🔺 ADD THIS BLOCK
-data "aws_eks_cluster" "cluster" {
-  name = aws_eks_cluster.eks.name
-}
-
-# 🔺 ADD THIS BLOCK
-data "aws_eks_cluster_auth" "cluster" {
-  name = aws_eks_cluster.eks.name
-}
-
-# 🔺 ADD THIS PROVIDER BLOCK
-provider "kubernetes" {
-  host                   = data.aws_eks_cluster.cluster.endpoint
-  cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority[0].data)
-  token                  = data.aws_eks_cluster_auth.cluster.token
-}
-
-# ✅ ALREADY CORRECT: aws-auth ConfigMap (just make sure it's at the end)
 resource "kubernetes_config_map" "aws_auth" {
   depends_on = [aws_eks_cluster.eks]
 
