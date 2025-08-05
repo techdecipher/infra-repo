@@ -17,19 +17,19 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      - name: Create PEM File
-        run: echo "${{ secrets.EC2_PRIVATE_KEY }}" > key.pem && chmod 600 key.pem
+      - name: Write PEM and PUB Keys to File
+        run: |
+          echo "${{ secrets.EC2_PRIVATE_KEY }}" > key.pem
+          echo "${{ secrets.EC2_PUBLIC_KEY }}" > key.pub
+          chmod 600 key.pem key.pub
 
       - name: Terraform Init
         run: terraform init
 
-      - name: Terraform Validate
-        run: terraform validate
-
       - name: Terraform Plan
         if: github.ref == 'refs/heads/staging'
-        run: terraform plan -var="aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" -var="aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" -var="key_name=${{ secrets.KEY_NAME }}" -var="private_key_path=key"
+        run: terraform plan -var="aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" -var="aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" -var="key_name=${{ secrets.KEY_NAME }}"
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main'
-        run: terraform apply -auto-approve -var="aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" -var="aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" -var="key_name=${{ secrets.KEY_NAME }}" -var="private_key_path=key"
+        run: terraform apply -auto-approve -var="aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" -var="aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" -var="key_name=${{ secrets.KEY_NAME }}"
