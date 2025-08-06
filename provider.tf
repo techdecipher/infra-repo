@@ -10,6 +10,6 @@ terraform {
     }
   }
 
-  backend "local" {}  # We'll switch to S3 later
+  backend "local" {} # We'll switch to S3 later
 }
 
