@@ -7,7 +7,9 @@ module "eks" {
   subnet_ids      = module.vpc.private_subnets
   vpc_id          = module.vpc.vpc_id
  
+  # Skip creating resources that already exist
   create_kms_key               = false
+  cluster_encryption_config    = {}             #override encryption config
   create_cloudwatch_log_group = false
 
   eks_managed_node_groups = {
