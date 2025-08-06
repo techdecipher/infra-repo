@@ -6,6 +6,9 @@ module "eks" {
   cluster_version = "1.29"
   subnet_ids      = module.vpc.private_subnets
   vpc_id          = module.vpc.vpc_id
+ 
+  create_kms_key               = false
+  create_cloudwatch_log_group = false
 
   eks_managed_node_groups = {
     default = {
