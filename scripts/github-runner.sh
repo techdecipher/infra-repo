@@ -11,7 +11,7 @@ cd /home/runner
 # Replace these values with your repo details
 GH_OWNER="techdecipher"
 GH_REPO="infra-repo"
-GH_PAT="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" # Store this in SSM or replace manually
+GH_PAT=$(aws ssm get-parameter --name /github/pat --with-decryption --query Parameter.Value --output text)
 RUNNER_LABELS="self-hosted,eks"
 
 GH_RUNNER_URL="https://github.com/${GH_OWNER}/${GH_REPO}"
