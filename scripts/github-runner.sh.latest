@@ -1,6 +1,18 @@
 #!/bin/bash
 
-# Set variables
+# Install dependencies
+sudo yum update -y
+sudo yum install -y curl unzip git jq docker shadow-utils
+
+# Enable & start Docker
+sudo systemctl enable docker
+sudo systemctl start docker
+
+# Create runner user and give Docker access
+sudo useradd -m runner
+sudo usermod -aG docker runner
+
+# Replace these
 GH_OWNER="techdecipher"
 GH_REPO="infra-repo"
 GH_PAT=$(aws ssm get-parameter --name /github/pat --with-decryption --query Parameter.Value --output text)
@@ -8,17 +20,11 @@ RUNNER_LABELS="self-hosted,eks"
 GH_RUNNER_URL="https://github.com/${GH_OWNER}/${GH_REPO}"
 RUNNER_VERSION="2.314.1"
 
-# Create runner user if not exists
-id -u runner &>/dev/null || sudo useradd -m -s /bin/bash runner
-
-# Install dependencies
-apt-get update -y
-apt-get install -y curl jq unzip libicu-dev libssl-dev libcurl4-openssl-dev software-properties-common
-
-# Setup GitHub runner as runner user
+# Download & setup as runner user
 sudo -i -u runner bash <<EOF
 cd ~
-mkdir -p actions-runner && cd actions-runner
+mkdir -p actions-runner
+cd actions-runner
 
 curl -L -H "Accept: application/octet-stream" \
   -o actions-runner-linux-x64.tar.gz \
@@ -26,14 +32,16 @@ curl -L -H "Accept: application/octet-stream" \
 
 tar -xzf actions-runner-linux-x64.tar.gz
 
+# Get registration token
 TOKEN=\$(curl -s -H "Authorization: token ${GH_PAT}" \
   https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/actions/runners/registration-token | jq -r .token)
 
+# Configure runner
 ./config.sh --url ${GH_RUNNER_URL} \
   --token \$TOKEN \
   --unattended --labels ${RUNNER_LABELS} --name runner-eks
-EOF
 
-# Enable & start the runner
-sudo -i -u runner bash -c '~/actions-runner/run.sh &'
+# Run the runner
+./run.sh
+EOF
 
