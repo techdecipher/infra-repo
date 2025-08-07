@@ -23,13 +23,14 @@ RUNNER_VERSION="2.314.1"
 # Download & setup as runner user
 sudo -i -u runner bash <<EOF
 cd ~
+mkdir -p actions-runner
+cd actions-runner
+
 curl -L -H "Accept: application/octet-stream" \
   -o actions-runner-linux-x64.tar.gz \
   https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz
 
-mkdir -p actions-runner
-tar -xzf actions-runner-linux-x64.tar.gz -C actions-runner
-cd actions-runner
+tar -xzf actions-runner-linux-x64.tar.gz
 
 # Get registration token
 TOKEN=\$(curl -s -H "Authorization: token ${GH_PAT}" \
