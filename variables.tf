@@ -5,6 +5,6 @@ variable "region" {
 
 variable "cluster_name" {
   description = "EKS cluster name"
-  default     = "gitops-eks-cluster"
+  default     = "gitops-eks-clusters"
 }
 
