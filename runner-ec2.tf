@@ -59,7 +59,7 @@ resource "aws_security_group" "runner_sg" {
 }
 
 resource "aws_instance" "github_runner" {
-  ami                         = "ami-0c101f26f147fa7fd" # Ubuntu 22.04 in us-east-1
+  ami                         = "ami-07caf09b362be10b8" # Ubuntu 22.04 in us-east-1
   instance_type               = "t2.medium"
   subnet_id                   = module.vpc.public_subnets[0]
   key_name                    = "k8s-key-pair"
@@ -69,6 +69,23 @@ resource "aws_instance" "github_runner" {
 
   tags = {
     Name = "github-runner"
+  }
+
+  user_data = file("${path.module}/scripts/github-runner.sh")
+}
+
+
+resource "aws_instance" "github_runner_ubuntu" {
+  ami                         = "ami-0a7d80731ae1b2435" # Ubuntu 20.04 LTS for us-east-1
+  instance_type               = "t2.medium"
+  subnet_id                   = module.vpc.public_subnets[0]
+  key_name                    = "k8s-key-pair"
+  associate_public_ip_address = true
+  vpc_security_group_ids      = [aws_security_group.runner_sg.id]
+  iam_instance_profile        = aws_iam_instance_profile.runner_profile.name
+
+  tags = {
+    Name = "github-runner-ubuntu"
   }
 
   user_data = file("${path.module}/scripts/github-runner.sh")
