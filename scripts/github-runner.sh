@@ -1,46 +1,46 @@
 #!/bin/bash
 
-# Update and install packages
-yum update -y
-yum install -y curl unzip git jq docker shadow-utils
+# Install dependencies
+sudo yum update -y
+sudo yum install -y curl unzip git jq docker shadow-utils
 
-# Enable and start Docker
-systemctl enable docker
-systemctl start docker
+# Enable & start Docker
+sudo systemctl enable docker
+sudo systemctl start docker
 
-# Create runner user and add to docker group
-useradd -m runner && usermod -aG docker runner
+# Create runner user and give Docker access
+sudo useradd -m runner
+sudo usermod -aG docker runner
 
-# Go to runner home
-cd /home/runner
-chown runner:runner /home/runner
-
-# Set GitHub repo details
+# Replace these
 GH_OWNER="techdecipher"
 GH_REPO="infra-repo"
 GH_PAT=$(aws ssm get-parameter --name /github/pat --with-decryption --query Parameter.Value --output text)
 RUNNER_LABELS="self-hosted,eks"
 GH_RUNNER_URL="https://github.com/${GH_OWNER}/${GH_REPO}"
+RUNNER_VERSION="2.314.1"
 
-# Switch to runner user for the rest
-sudo -u runner bash <<EOF
-cd /home/runner
-
-# Download latest runner version
+# Download & setup as runner user
+sudo -i -u runner bash <<EOF
+cd ~
 curl -L -H "Accept: application/octet-stream" \
   -o actions-runner-linux-x64.tar.gz \
-  https://github.com/actions/runner/releases/download/v2.314.1/actions-runner-linux-x64-2.314.1.tar.gz
+  https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz
 
-mkdir -p actions-runner && cd actions-runner
-tar -xzf ../actions-runner-linux-x64.tar.gz
+mkdir -p actions-runner
+tar -xzf actions-runner-linux-x64.tar.gz -C actions-runner
+cd actions-runner
 
-# Configure the runner
+# Get registration token
+TOKEN=\$(curl -s -H "Authorization: token ${GH_PAT}" \
+  https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/actions/runners/registration-token | jq -r .token)
+
+# Configure runner
 ./config.sh --url ${GH_RUNNER_URL} \
-  --token \$(curl -s -H "Authorization: token ${GH_PAT}" \
-  https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/actions/runners/registration-token | jq -r .token) \
+  --token \$TOKEN \
   --unattended --labels ${RUNNER_LABELS} --name runner-eks
 
-# Start the runner
+# Run the runner
 ./run.sh
 EOF
 
