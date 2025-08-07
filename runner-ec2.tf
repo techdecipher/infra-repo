@@ -3,7 +3,7 @@ resource "aws_instance" "github_runner" {
   instance_type = "t2.medium"
   subnet_id     = module.vpc.public_subnets[0]  # Put it in public subnet for now
   key_name      = "k8s-key-pair"
-
+  associate_public_ip_address = true
   vpc_security_group_ids = [aws_security_group.runner_sg.id]
 
   tags = {
