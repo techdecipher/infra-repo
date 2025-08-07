@@ -10,7 +10,7 @@ resource "aws_instance" "github_runner" {
     Name = "github-runner"
   }
 
-  user_data = file("scripts/github-runner.sh")  # We'll create this script next
+  user_data = file("${path.module}/scripts/github-runner.sh")
 }
 
 resource "aws_security_group" "runner_sg" {
