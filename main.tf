@@ -18,7 +18,9 @@ resource "aws_subnet" "public" {
 
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
-  route { cidr_block = "0.0.0.0/0" gateway_id = aws_internet_gateway.igw.id }
+  route { 
+    cidr_block = "0.0.0.0/0" 
+    gateway_id = aws_internet_gateway.igw.id }
 }
 
 resource "aws_route_table_association" "public" {
@@ -95,13 +97,4 @@ resource "aws_instance" "web" {
   associate_public_ip_address = true
   key_name                    = var.key_pair_name  # existing key pair name
 
-  user_data = <<'EOF'
-#!/bin/bash
-apt-get update -y
-apt-get install -y docker.io awscli snapd
-systemctl enable --now docker
-snap install amazon-ssm-agent --classic
-systemctl enable --now snap.amazon-ssm-agent.amazon-ssm-agent.service
-docker run -d --name site -p 80:80 --restart unless-stopped nginx:alpine
-EOF
-}
+  user_data = file("${path.module}/user_data.sh")
