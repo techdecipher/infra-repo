@@ -21,3 +21,9 @@ variable "subnet_cidr" {
   type        = string
   default     = "10.10.1.0/24"
 }
+
+variable "key_pair_name" {
+  description = "Name of the existing EC2 key pair for SSH access"
+  type        = string
+  default     = "your-keypair-name" # replace with your actual key name
+}
