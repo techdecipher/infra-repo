@@ -1,0 +1,52 @@
+name: Terraform Infra GitOps
+
+on:
+  push:
+    branches:
+      - staging
+      - main
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_REGION: us-east-1
+  BUCKET_TF_STATE: ${{ secrets.BUCKET_TF_STATE }}
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./terraform
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: 1.6.3
+
+    # Always init before doing anything
+    - name: Terraform Init
+      run: terraform init -backend-config="bucket=$BUCKET_TF_STATE"
+
+    # Always check formatting
+    - name: Terraform Format Check
+      run: terraform fmt -check
+
+    # STAGING: Preview only
+    - name: Terraform Validate
+      if: github.ref == 'refs/heads/staging'
+      run: terraform validate
+
+    - name: Terraform Plan
+      if: github.ref == 'refs/heads/staging'
+      run: terraform plan -no-color -input=false
+
+    # MAIN: Apply only
+    - name: Terraform Apply
+      if: github.ref == 'refs/heads/main'
+      run: terraform apply -auto-approve
