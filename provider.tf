@@ -10,7 +10,7 @@ terraform {
 
   backend "s3" {
     bucket = "k8s-state99"                # your existing S3 bucket
-    key    = "tfstate/ec2-infra.tfstate"  # state file path in bucket
+    key    = "ec2-infra.tfstate"  # state file path in bucket
     region = "us-east-1"                  # bucket's region
   }
 }
